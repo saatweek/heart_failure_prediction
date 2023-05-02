@@ -1,0 +1,165 @@
+---
+title: "STAT632 Project EDA"
+author: "Esther Ki"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load("tidyverse", "phia", "MASS", "car", "reshape2")
+```
+
+```{r}
+# Loading and reading the dataset
+df <- read.csv("heart.csv")
+head(df)
+```
+
+```{r}
+# Converting all the relevant columns to factors (except the response)
+cols <- c("Sex", "ChestPainType", "RestingECG", "ExerciseAngina", "ST_Slope", "FastingBS", "HeartDisease")
+df <- df %>%
+  mutate_at(cols, factor)
+```
+
+```{r}
+pairs(Age ~ RestingBP + Cholesterol + MaxHR + Oldpeak , data = df)
+```
+
+### EDA of numerical variables
+
+```{r}
+ggplot(df) +
+  geom_boxplot(aes(x = HeartDisease, y = Age)) +
+  theme_classic()
+```
+
+```{r}
+ggplot(df) +
+  geom_boxplot(aes(x = HeartDisease, y = RestingBP)) +
+  theme_bw()
+```
+
+```{r}
+ggplot(df) +
+  geom_boxplot(aes(x = HeartDisease, y = MaxHR)) +
+  theme_classic()
+```
+
+```{r}
+ggplot(df) +
+  geom_boxplot(aes(x = HeartDisease, y = Oldpeak)) +
+  theme_classic()
+```
+
+```{r}
+ggplot(df) +
+  geom_boxplot(aes(x = HeartDisease, y = Cholesterol)) +
+  theme_bw()
+
+df %>% 
+  count(Cholesterol ==  0)
+
+df %>% 
+  filter(Cholesterol == 0) %>%
+  count(HeartDisease == 1)
+
+
+
+# A lot of zeros (172 observations) in cholesterol and 152 out of 172 patients with 0 cholesterol have heart disease, which doesn't make sense - decide to remove cholesterol variable from the data
+
+
+```
+
+### Correlation heat map of numerical variables
+
+```{r}
+df_numeric <- subset(df, select = c("Age", "RestingBP", "MaxHR", "Oldpeak", "HeartDisease"))
+df_numeric$HeartDisease <- as.numeric(df_numeric$HeartDisease)
+
+corr_matrix <- cor(df_numeric)
+
+ggplot(data = melt(corr_matrix)) + 
+  geom_tile(aes(x = Var1, y = Var2, fill = value)) + 
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  geom_text(aes(x = Var1, y = Var2, label = round(value, 2)), color = "black") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "", y = "", fill = "Correlation")
+```
+
+### EDA of factor variables (Sex, ChestPainType, Cholesterol, FastingBS, RestingECG, ExerciseAngina, ST_Slope)
+
+```{r}
+ggplot(df) +
+  geom_bar(aes(x = Sex), fill = "#d1495b") +
+  labs(title = "Sex Ratio in the Data") +
+  theme_bw()
+```
+
+
+```{r}
+ggplot(df) +
+  geom_bar(aes(x=HeartDisease, fill=Sex),
+     position="dodge") +
+  labs(title = "Distribution of Heart Disease by Sex") +
+  theme_bw()
+```
+
+```{r}
+ggplot(df) +
+  geom_bar(aes(x= HeartDisease , fill=ChestPainType)) +
+  labs(title = "Types of Chest Pain") +
+  theme_bw()
+
+df %>% 
+  group_by(HeartDisease) %>% 
+  count(ChestPainType)
+```
+
+```{r}
+ggplot(df) +
+  geom_bar(aes(x= HeartDisease, fill= FastingBS)) +
+  labs(title = "Distribution of Heart Disease by Fasting Blood Sugar") +
+  scale_fill_manual(breaks = c("0", "1"),
+                        values=c("#8d96a3", "#0CB702")) +
+  scale_fill_discrete(labels = c("< 120 mg/dl", "> 120 mg/dl")) +
+  theme_bw()
+```
+
+```{r}
+df$RestingECG <- factor(df$RestingECG ,
+                    levels = c("Normal", "LVH", "ST"))
+
+ggplot(df) +
+  geom_bar(aes(x= HeartDisease, fill = RestingECG), position = "dodge") +
+  labs(title = "Distribution of Heart Disease by Resting ECG") +
+  theme_bw()
+```
+
+```{r}
+ggplot(df) +
+  geom_bar(aes(x= HeartDisease, fill = ExerciseAngina)) +
+  labs(title = "Distribution of Heart Disease by Exercise-Induced Angina") +
+  scale_fill_manual(breaks = c("N", "Y"),
+                        values=c("#8d96a3", "cornflowerblue")) +
+  theme_bw()
+```
+
+```{r}
+ggplot(df) +
+  geom_bar(aes(x= HeartDisease, fill = ST_Slope), position = "dodge") +
+  scale_fill_manual(breaks = c("Down", "Flat", "Up"),
+                        values=c("#d1495b", "#edae49", "cornflowerblue")) +
+  labs(title = "Distribution of Heart Disease by ST_Slope") +
+  theme_bw()
+```
+
+
+

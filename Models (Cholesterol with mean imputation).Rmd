@@ -1,0 +1,211 @@
+---
+title: "Models (Cholesterol with mean imputation)"
+author: "Satwik Behera"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Preprocessing
+
+```{r}
+# Suppress Warnings
+options(warn=-1)
+
+
+
+# Installing, loading packages
+pacman::p_load("tidyverse", "phia", "MASS", "car", "pROC", "caret", "scales", 
+               "lattice", "randomForest", "rpart", "rpart.plot", "e1071", "reshape2")
+
+# Loading and reading the dataset
+df <- read.csv("heart.csv")
+head(df)
+
+# Converting all the relevant columns to factors
+cols <- c("Sex", "ChestPainType", "RestingECG", "ExerciseAngina", 
+          "ST_Slope", "HeartDisease", "FastingBS")
+
+df <- df %>%
+  mutate_at(cols, factor)
+
+set.seed(123)
+
+# remove the row with RestingBP = 0 
+df <- df %>%
+  filter(RestingBP != 0)
+
+# define the columns to be scaled
+cols_to_scale <- c("Age", "RestingBP", "Oldpeak", "MaxHR")
+
+# standardize the other columns using scale function
+df[, cols_to_scale] <- as.data.frame(scale(df[, cols_to_scale]))
+
+# Mean Imputation in Cholesterol Columns\
+m_Chol <- mean(df$Cholesterol, na.rm = T)
+df$Cholesterol <- replace(df$Cholesterol, 0, m_Chol)
+
+# Train-Test Split
+smp_size <- floor(0.80 * nrow(df))
+train_ind <- sample(seq_len(nrow(df)), size = smp_size)
+train <- df[train_ind, ]
+test <- df[-train_ind, ]
+```
+
+# Logistic Regression Models
+```{r}
+model1 <- glm(HeartDisease ~ ., data=train, family="binomial") ##
+model2 <- glm(HeartDisease ~ (Sex + ChestPainType + FastingBS + Cholesterol +
+                                ExerciseAngina + Oldpeak +ST_Slope), 
+              data=train, family="binomial") # Significant from model1
+
+model3 <- glm(HeartDisease ~ (Sex + ChestPainType + FastingBS + Cholesterol +
+                                ExerciseAngina + Oldpeak +ST_Slope)^2, 
+              data=train, family="binomial") ###
+
+model4 <- step(model3, trace=0) #####
+
+# model5 <- glm(HeartDisease ~ .^2, data=train, family="binomial")
+
+# model6 <- step(model5, trace=0)
+```
+# Model Summaries 
+```{r}
+summary(model4)
+```
+
+
+```{r}
+"ROC curve and AUC"
+p_mod1<-predict(model1, newdata=test, type = "response")
+p_mod3<-predict(model3, newdata=test, type = "response")
+p_mod4<-predict(model4, newdata=test, type = "response")
+
+roc_mod1=roc(response=test$HeartDisease, predictor= factor(p_mod1, ordered = TRUE))
+roc_mod3=roc(response=test$HeartDisease, predictor= factor(p_mod3, ordered = TRUE))
+roc_mod4=roc(response=test$HeartDisease, predictor= factor(p_mod4, ordered = TRUE))
+plot(roc_mod1, col="red", lwd=1, main="ROC curve (Simple Additive Model)")
+text(0.1, 0.2, paste("Simple Additive Model AUC:", round(auc(roc_mod1), 5)), col = "red")
+plot(roc_mod3, col="blue", lwd=1, main="ROC curve (Selective interaction model)")
+text(0.1, 0.2, paste("Selective interaction model AUC:", round(auc(roc_mod3), 5)), col = "blue")
+plot(roc_mod4, col="black", lwd=1, main="ROC curve (Backward stepwise selection (with model 2))")
+text(0.1, 0.2, paste("Backward stepwise selection AUC:", round(auc(roc_mod4), 5)), col = "black")
+
+```
+
+# Plotting ROC Curves
+```{r}
+plot(roc_mod1, col=alpha("red", 0.5), lwd=0.5, main="ROC curves (Comparison)")
+lines(roc_mod3, col=alpha("blue", 0.5), lwd=0.5)
+lines(roc_mod4, col="black", lwd=0.9)
+text(0.1, 0.6, paste("Simple Additive Model AUC:", round(auc(roc_mod1), 5)), col = "red")
+text(0.1, 0.5, paste("Selective interaction model AUC:", round(auc(roc_mod3), 5)), col = "blue")
+text(0.1, 0.4, paste("Backward Stepwise Selection Model AUC:", round(auc(roc_mod4), 5)), col = "black")
+
+```
+
+# Confusion Matrix
+```{r}
+predicted <- predict(model4, test, type="response")
+predicted <- ifelse(predicted < 0.5, "0", "1")
+prop.table(table(test$HeartDisease, predicted))
+```
+# Random Forest
+```{r}
+# Build the random forest model
+rf_model <- randomForest(HeartDisease ~ ., data = train,
+                         importance = TRUE, ntree = 500, mtry = sqrt(ncol(train)))
+# Make predictions on the test set
+rf_predictions <- predict(rf_model, newdata = test)
+# Evaluate the model performance
+confusionMatrix(rf_predictions, test$HeartDisease)
+varImpPlot(rf_model)
+rf_roc <- roc(test$HeartDisease, predict(rf_model, newdata = test, type = "prob")[,2])
+plot(rf_roc)
+auc(rf_roc)
+```
+# Decision Tree
+```{r}
+# Build the decision tree model
+dt_model <- rpart(HeartDisease ~ ., data = train, method = "class")
+# Visualize the decision tree
+rpart.plot(dt_model)
+# Make predictions on the test set
+dt_pred <- predict(dt_model, test, type = "class")
+# Evaluate the model
+confusionMatrix(dt_pred, test$HeartDisease)
+# Check variable importance
+var_dt <- varImp(dt_model)
+var_dt
+
+ggplot(var_dt, aes(x = reorder(rownames(var_dt), -Overall), y = Overall)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Predictor variable", y = "Importance score", title = "Variable Importance Plot") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Generate ROC curve and calculate AUC
+library(pROC)
+dt_roc <- roc(test$HeartDisease, predict(dt_model, newdata = test, type = "prob")[,2])
+plot(dt_roc)
+auc(dt_roc)
+```
+# Naive Bayes
+
+```{r}
+# Build the Naive Bayes model
+nb_model <- naiveBayes(HeartDisease ~ ., data = train) # Make predictions on the test set
+nb_pred <- predict(nb_model, test, type = "class")
+# Evaluate the model
+confusionMatrix(nb_pred, test$HeartDisease)
+# Check variable importance
+ctrl <- trainControl(method = "cv", number = 5)
+
+nb_model2 <- train(HeartDisease ~ ., data = train, method = "naive_bayes",
+                   trControl = ctrl, tuneLength = 10, preProcess = c("center", "scale"))
+var_nb <- varImp(nb_model2)
+var_nb
+# Plot variable importance
+ggplot(var_nb, aes(x = reorder(rownames(var_nb), -Overall), y = Overall)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Predictor variable", y = "Importance score", title = "Variable Importance Plot") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Generate ROC curve and calculate AUC
+nb_roc <- roc(test$HeartDisease, predict(nb_model, newdata = test, type = "raw")[,2])
+plot(nb_roc)
+auc(nb_roc)
+```
+
+# kNN
+```{r}
+# Preprocess the data (normalize numerical variables)
+preProc <- preProcess(train[, -1], method = c("center", "scale"))
+trainDataNorm <- predict(preProc, train[, -1])
+testDataNorm <- predict(preProc, test[, -1])
+# Train the KNN model
+knn_model <- train(HeartDisease ~ ., data = trainDataNorm, method = "knn",
+                   trControl = trainControl(method = "cv", number = 5),
+tuneGrid = expand.grid(k = seq(1, 20, 1))) # Make predictions on the test set
+knn_pred <- predict(knn_model, testDataNorm)
+# Evaluate the model
+confusionMatrix(knn_pred, test$HeartDisease)
+# Check variable importance
+var_knn <- varImp(knn_model)
+var_knn
+
+# Create a bar plot of variable importance scores
+ggplot(var_knn, aes(x = reorder(row.names(var_knn), -Overall), y = Overall)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Predictor variable", y = "Importance score", title = "Variable Importance Plot")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Generate ROC curve and calculate AUC
+knn_roc <- roc(test$HeartDisease, predict(knn_model, newdata = testDataNorm, type = "prob")[,2])
+plot(knn_roc)
+auc(knn_roc)
+```
+

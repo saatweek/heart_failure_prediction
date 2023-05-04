@@ -75,4 +75,26 @@ We chose to use five different models for our project, including Logistic regres
 | Advantages   | Designed for Classification, Useful for understanding the variable influence| No overfitting, Better than DT | Simple to Understand and visualize | Small training data | Simple to implement, Robust to noise |
 | Disadvantages | Limited to Binary Classification | Slow real-time predictions, complex | Can create complex trees that don't generalize, Sensistive to Variations | Bad Estimator | Manual Selection of k, high computation cost |
 
+**Table 2. Advantages and Disadvantages of Models**
+
 Neural Networks are not considered for the project due to their complexity and lack of interpretability, which is crucial in the medical field where every error needs explanation and improvement.
+
+#### 3.1.2 Logistic Regression
+##### 3.1.2.1 Full Additive Model
+We applied a full additive Logistic Model with all explanatory variables. Below is the summary, confusion matrix, and ROC curve of the simple additive model.
+| <img width="723" alt="image" src="https://user-images.githubusercontent.com/43529908/236350920-f99f21fe-5d82-4326-a18c-d422ee1be91d.png"> |
+| ------- |
+| **Figure 9**. Results of Full Additive Model |
+
+##### 3.1.2.2 Selective Interaction Model
+We improved logistic regression model with added significant factors and 2-way interactions, evaluated on testing data using confusion matrix and ROC Curve.
+| <img width="710" alt="image" src="https://user-images.githubusercontent.com/43529908/236351073-cb891290-fa46-4e9a-b82b-e23d45bfa2b4.png"> |
+| ---------- |
+| **Figure 10**. Results of Selective Interaction Mode |
+##### 3.1.2.3 Backward Stepwise Selection for Final Model
+We utilized the backward stepwise method by using the step() function to remove insignificant columns and interactions to reach our final logistic regression model. The final confusion matrix and ROC curve are shown below for our final model.
+| <img width="733" alt="image" src="https://user-images.githubusercontent.com/43529908/236351292-a2c3d9bb-0165-46af-9677-a353b018b7f8.png"> |
+| ------------ |
+| **Figure 11**. Results of Back Stepwise Selection for Final Model |
+#### 3.1.3 Random Forest
+We used Random Forest, which is an ensemble learning method that combines multiple decision trees. We used Random Forest with significant features such as ST_Slope, ChestPainType, and Oldpeak, resulting in an accuracy of 0.89, sensitivity of 0.85, specificity of 0.91, and AUC of 0.93.

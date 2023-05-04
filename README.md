@@ -69,7 +69,10 @@ Correlations between numerical variables are checked and confirmed there are no 
 Model selection is a crucial step in Machine Learning that involves choosing and validating the best model for prediction, considering factors like complexity, interpretability, and available data, and our use case requires a classification model with high accuracy and interpretability.
 #### 3.1.1 Overview of Modeling
 We chose to use five different models for our project, including Logistic regression, Random forest, Decision trees, Naive Bayes, and kNN, each with their own set of advantages and disadvantages, which are outlined in a table for comparison.
+
 |              | Logistic Regression | Random Forest | Decision Trees | Naive Bayes | kNN    |
 | ------------ | ------------------- | --------------| -------------- | ----------- | ------ |
 | Advantages   | Designed for Classification, Useful for understanding the variable influence| No overfitting, Better than DT | Simple to Understand and visualize | Small training data | Simple to implement, Robust to noise |
 | Disadvantages | Limited to Binary Classification | Slow real-time predictions, complex | Can create complex trees that don't generalize, Sensistive to Variations | Bad Estimator | Manual Selection of k, high computation cost |
+
+Neural Networks are not considered for the project due to their complexity and lack of interpretability, which is crucial in the medical field where every error needs explanation and improvement.

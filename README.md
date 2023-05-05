@@ -3,8 +3,8 @@
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Data Description](#data-description)
+1. [Introduction](#1.-introduction)
+2. [Data Description](#2.-data-description)
   - 2.1 Data
   - 2.2 EDA
     - 2.2.1 Categorical variables

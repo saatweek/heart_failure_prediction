@@ -3,8 +3,8 @@
 
 ## Table of Contents
 
-1. Introduction
-2. Data Description
+1. [Introduction](#introduction)
+2. [Data Description](#data-description)
   - 2.1 Data
   - 2.2 EDA
     - 2.2.1 Categorical variables
@@ -82,7 +82,7 @@ Neural Networks are not considered for the project due to their complexity and l
 #### 3.1.2 Logistic Regression
 ##### 3.1.2.1 Full Additive Model
 We applied a full additive Logistic Model with all explanatory variables. Below is the summary, confusion matrix, and ROC curve of the simple additive model.
-| <img width="723" alt="image" src="https://user-images.githubusercontent.com/43529908/236350920-f99f21fe-5d82-4326-a18c-d422ee1be91d.png"> |
+| <img width="751" alt="image" src="https://user-images.githubusercontent.com/43529908/236375632-70b49ca3-5d52-4d42-847f-4080befd6e72.png"> |
 | ------- |
 | **Figure 9**. Results of Full Additive Model |
 

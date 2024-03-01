@@ -25,7 +25,7 @@ pacman::p_load("tidyverse", "phia", "MASS", "car", "pROC", "caret", "scales",
 df <- read.csv("heart.csv")
 head(df)
 
-# Converting all the relevant columns to factors
+# Converting the columns to factors
 cols <- c("Sex", "ChestPainType", "RestingECG", "ExerciseAngina", 
           "ST_Slope", "HeartDisease", "FastingBS")
 
